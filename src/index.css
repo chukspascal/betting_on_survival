@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-display: 'Montserrat', sans-serif;
+    --font-sans: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #F5F3EE;
+    color: #111215;
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+  }
+
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+}
+
+/* Minimal scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F5F3EE;
+}
+::-webkit-scrollbar-thumb {
+  background: #d4d0c8;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #f97316;
+}
+
+/* Studio Gallery Backdrop matching Mockup 1 */
+.studio-backdrop {
+  background: radial-gradient(circle at 65% 45%, #FFFFFF 0%, #F4F1EA 52%, #E9E4DA 100%);
+}
+
+/* Cover-inspired orange highlight block behind "ON" */
+.on-badge {
+  display: inline-block;
+  background: #f97316;
+  color: #ffffff;
+  padding: 0.02em 0.2em;
+  border-radius: 2px;
+}
