@@ -269,7 +269,7 @@ export default function App() {
               <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-mono text-zinc-400 pt-2.5 border-t border-black/5">
                 <span>
                   {idx < SITE_CONFIG.mockChapters.length - 1
-                    ? `Scroll to turn page to Chapter ${idx + 2} ↓`
+                    ? `Scroll to turn page to ${SITE_CONFIG.mockChapters[idx + 1].chapterLabel} ↓`
                     : 'Scroll to close book & flip to Back Cover ↓'}
                 </span>
               </div>

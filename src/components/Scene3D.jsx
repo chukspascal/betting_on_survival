@@ -38,26 +38,30 @@ function createLeftPageTexture(chapter) {
   canvas.height = 1448
   const ctx = canvas.getContext('2d')
 
+  // Warm book paper background with spine-fold gutter shadow on the right side
   const grad = ctx.createLinearGradient(0, 0, 1024, 0)
   grad.addColorStop(0, '#eae3d5')
-  grad.addColorStop(0.06, '#fcfaf5')
+  grad.addColorStop(0.04, '#fcfaf5')
   grad.addColorStop(0.88, '#f8f4ec')
-  grad.addColorStop(0.96, '#dfd7c8')
+  grad.addColorStop(0.96, '#ded7c8')
   grad.addColorStop(1, '#bfb6a6')
   ctx.fillStyle = grad
   ctx.fillRect(0, 0, 1024, 1448)
 
+  // Running Header
   ctx.fillStyle = '#71717a'
   ctx.font = 'bold 20px monospace'
   ctx.textAlign = 'left'
   ctx.fillText('BETTING ON SURVIVAL', 110, 115)
 
+  // Chapter Accent Label
   ctx.fillStyle = '#ea580c'
   ctx.font = 'bold 24px monospace'
   ctx.fillText(chapter.chapterLabel, 110, 240)
 
+  // Chapter Title
   ctx.fillStyle = '#111215'
-  ctx.font = '900 46px sans-serif'
+  ctx.font = '900 44px sans-serif'
   const words = chapter.title.split(' ')
   let line = ''
   let y = 310
@@ -66,17 +70,18 @@ function createLeftPageTexture(chapter) {
     if (ctx.measureText(testLine).width > 780 && i > 0) {
       ctx.fillText(line.trim(), 110, y)
       line = words[i] + ' '
-      y += 56
+      y += 54
     } else {
       line = testLine
     }
   }
   ctx.fillText(line.trim(), 110, y)
 
-  y += 38
+  y += 36
   ctx.fillStyle = '#f97316'
   ctx.fillRect(110, y, 85, 6)
 
+  // Quote
   y += 55
   ctx.fillStyle = '#3f3f46'
   ctx.font = 'italic 25px serif'
@@ -94,6 +99,7 @@ function createLeftPageTexture(chapter) {
   }
   ctx.fillText(qLine.trim(), 110, y)
 
+  // Excerpt lines
   y += 70
   ctx.fillStyle = '#18181b'
   ctx.font = '26px serif'
@@ -101,6 +107,7 @@ function createLeftPageTexture(chapter) {
     ctx.fillText(l, 110, y + idx * 45)
   })
 
+  // Page number
   ctx.fillStyle = '#71717a'
   ctx.font = 'bold 22px monospace'
   ctx.fillText(chapter.leftPageNumber, 110, 1345)
@@ -112,7 +119,68 @@ function createLeftPageTexture(chapter) {
 }
 
 /**
+ * Draws the real book page image onto the right page canvas
+ */
+function drawRealPageImage(ctx, img, chapter) {
+  let sx = 0
+  let sy = 0
+  const sw = img.naturalWidth || img.width
+  const totalH = img.naturalHeight || img.height
+  let sh = totalH
+
+  // Precise crop coordinates for each chapter's primary page to remove phone bars/cutoffs
+  if (chapter.chapterNumber === 1) {
+    sy = Math.round(totalH * 0.011) // skip top notch
+    sh = Math.round(totalH * 0.675) // crop Page 17 (above separator)
+  } else if (chapter.chapterNumber === 5) {
+    sy = Math.round(totalH * 0.011)
+    sh = Math.round(totalH * 0.675) // crop Page 25
+  } else if (chapter.chapterNumber === 7) {
+    sy = 0
+    sh = totalH // full page
+  } else if (chapter.chapterNumber === 19) {
+    sy = Math.round(totalH * 0.054) // skip top divider
+    sh = Math.round(totalH * 0.69)  // crop Page 42
+  }
+
+  // Margin calculation: left gutter margin slightly wider for realistic binding depth
+  const padLeft = 52
+  const padRight = 36
+  const padTop = 38
+  const padBottom = 42
+  const targetW = 1024 - padLeft - padRight
+  const targetH = 1448 - padTop - padBottom
+
+  const scale = Math.min(targetW / sw, targetH / sh)
+  const dw = sw * scale
+  const dh = sh * scale
+  const dx = padLeft + (targetW - dw) / 2
+  const dy = padTop + (targetH - dh) / 2
+
+  // Subtle paper page drop-shadow inside margins
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.06)'
+  ctx.shadowBlur = 10
+  ctx.shadowOffsetX = 2
+  ctx.shadowOffsetY = 4
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(dx, dy, dw, dh)
+  ctx.shadowColor = 'transparent'
+
+  // Draw the real book page excerpt
+  ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh)
+
+  // Re-apply spine gutter gradient over the inner left edge for seamless 3D depth
+  const gutterOverlay = ctx.createLinearGradient(0, 0, 90, 0)
+  gutterOverlay.addColorStop(0, 'rgba(180, 170, 155, 0.45)')
+  gutterOverlay.addColorStop(0.3, 'rgba(210, 202, 190, 0.18)')
+  gutterOverlay.addColorStop(1, 'rgba(255, 255, 255, 0)')
+  ctx.fillStyle = gutterOverlay
+  ctx.fillRect(0, 0, 90, 1448)
+}
+
+/**
  * Renders the RIGHT page of an open book spread for a given chapter
+ * Replaced with real book-content images from public/book-content!
  */
 function createRightPageTexture(chapter) {
   const canvas = document.createElement('canvas')
@@ -120,15 +188,21 @@ function createRightPageTexture(chapter) {
   canvas.height = 1448
   const ctx = canvas.getContext('2d')
 
-  const grad = ctx.createLinearGradient(0, 0, 1024, 0)
-  grad.addColorStop(0, '#bfb6a6')
-  grad.addColorStop(0.04, '#dfd7c8')
-  grad.addColorStop(0.12, '#f8f4ec')
-  grad.addColorStop(0.94, '#fcfaf5')
-  grad.addColorStop(1, '#eae3d5')
-  ctx.fillStyle = grad
-  ctx.fillRect(0, 0, 1024, 1448)
+  const renderBackground = () => {
+    const grad = ctx.createLinearGradient(0, 0, 1024, 0)
+    grad.addColorStop(0, '#bfb6a6')
+    grad.addColorStop(0.04, '#dfd7c8')
+    grad.addColorStop(0.12, '#f8f4ec')
+    grad.addColorStop(0.94, '#fcfaf5')
+    grad.addColorStop(1, '#eae3d5')
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, 1024, 1448)
+  }
 
+  // Initial paper fill
+  renderBackground()
+
+  // Fallback typography while image loads
   ctx.fillStyle = '#71717a'
   ctx.font = 'bold 20px monospace'
   ctx.textAlign = 'right'
@@ -145,28 +219,8 @@ function createRightPageTexture(chapter) {
   ctx.fillStyle = '#18181b'
   ctx.font = '27px serif'
   chapter.rightLines.forEach((l, idx) => {
-    if (l.startsWith('—')) {
-      ctx.font = 'bold italic 26px serif'
-      ctx.fillStyle = '#ea580c'
-    } else {
-      ctx.font = '27px serif'
-      ctx.fillStyle = '#18181b'
-    }
     ctx.fillText(l, 115, 240 + idx * 48)
   })
-
-  ctx.strokeStyle = 'rgba(249, 115, 22, 0.35)'
-  ctx.lineWidth = 2
-  ctx.strokeRect(115, 1060, 795, 165)
-
-  ctx.fillStyle = '#ea580c'
-  ctx.font = 'bold 19px monospace'
-  ctx.fillText('KEY TAKEAWAY • ' + chapter.chapterLabel, 145, 1108)
-
-  ctx.fillStyle = '#27272a'
-  ctx.font = 'italic 23px serif'
-  ctx.fillText('“Because sometimes, the real victory is not winning', 145, 1152)
-  ctx.fillText('a bet; it is refusing to place another one.”', 145, 1188)
 
   ctx.textAlign = 'right'
   ctx.fillStyle = '#71717a'
@@ -176,6 +230,19 @@ function createRightPageTexture(chapter) {
   const texture = new THREE.CanvasTexture(canvas)
   texture.colorSpace = THREE.SRGBColorSpace
   texture.anisotropy = 8
+
+  // Load the real book page image from public/assets/book-pages/
+  if (chapter.image) {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      renderBackground()
+      drawRealPageImage(ctx, img, chapter)
+      texture.needsUpdate = true
+    }
+    img.src = chapter.image
+  }
+
   return texture
 }
 
